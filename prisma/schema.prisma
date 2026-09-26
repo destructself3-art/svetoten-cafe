@@ -1,0 +1,112 @@
+// Svetoten data model.
+// SQLite locally; nothing here is SQLite-specific, so switching the provider to postgresql is a one-line change.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+/// Menu section, e.g. "Завтраки". `daypart` drives the "now serving" logic.
+model Category {
+  id       String     @id @default(cuid())
+  slug     String     @unique
+  title    String
+  subtitle String?
+  /// morning | day | evening | allday
+  daypart  String
+  /// Opening time label shown in the menu, e.g. "08:00"
+  serves   String
+  sort     Int        @default(0)
+  items    MenuItem[]
+}
+
+model MenuItem {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  /// Price in rubles
+  price       Int
+  /// Second price, e.g. a bottle of wine or a large cup
+  priceAlt    Int?
+  unit        String?
+  unitAlt     String?
+  /// Comma-separated: signature, veg, vegan, gf, spicy, new
+  tags        String   @default("")
+  /// Shot id from docs/shot-list.json, e.g. "menu-syrniki"
+  photo       String?
+  /// JSON array of drink layers for the cup cross-section
+  anatomy     String?
+  /// Stop-list switch controlled from the admin panel
+  inStock     Boolean  @default(true)
+  sort        Int      @default(0)
+}
+
+model DiningTable {
+  id       String        @id @default(cuid())
+  code     String        @unique
+  label    String
+  /// window | hall | sofa | communal | terrace | bar
+  zone     String
+  seatsMin Int
+  seatsMax Int
+  /// Position on the floor plan, in plan units (plan is 1000 x 640)
+  x        Float
+  y        Float
+  w        Float
+  h        Float
+  /// round | square | rect | sofa | bar
+  shape    String
+  rotation Float         @default(0)
+  note     String?
+  active   Boolean       @default(true)
+  sort     Int           @default(0)
+  bookings Booking[]
+  slots    BookingSlot[]
+}
+
+model Booking {
+  id        String        @id @default(cuid())
+  /// Public code shown on the ticket, e.g. "SV-7K3M9Q"
+  code      String        @unique
+  tableId   String
+  table     DiningTable   @relation(fields: [tableId], references: [id])
+  startsAt  DateTime
+  endsAt    DateTime
+  guests    Int
+  name      String
+  phone     String
+  comment   String?
+  occasion  String?
+  eventSlug String?
+  /// confirmed | seated | completed | cancelled | no_show
+  status    String        @default("confirmed")
+  /// site | admin
+  source    String        @default("site")
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  slots     BookingSlot[]
+
+  @@index([startsAt])
+}
+
+/// One row per 30-minute slot a booking occupies.
+/// The unique (tableId, slot) pair makes double booking impossible at the database level.
+model BookingSlot {
+  id        String      @id @default(cuid())
+  bookingId String
+  booking   Booking     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  tableId   String
+  table     DiningTable @relation(fields: [tableId], references: [id])
+  slot      DateTime
+
+  @@unique([tableId, slot])
+  @@index([slot])
+}
+

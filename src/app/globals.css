@@ -1,0 +1,577 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------- Tokens: "Свет" (day) and "Тень" (night). Warm light, cool shadow. ---------- */
+:root,
+:root[data-mode="day"],
+.tone-day {
+  color-scheme: light;
+  --paper: 243 243 240; /* porcelain */
+  --surface: 251 251 249;
+  --sunk: 232 231 226;
+  --stone: 216 214 208; /* terrazzo */
+  --ink: 30 29 27; /* graphite */
+  --ink-2: 92 93 89;
+  --ink-3: 110 111 106;
+  --line: 30 29 27;
+  --honey: 227 155 53; /* sunlight */
+  --honey-ink: 154 88 12;
+  --wine: 140 36 51;
+  --brass: 184 137 62;
+  --zinc: 167 171 173;
+  --shadow: 40 52 68; /* shadows are cool */
+  --grain-opacity: 0.06;
+  --grain-blend: multiply;
+}
+
+:root[data-mode="night"],
+.tone-night {
+  color-scheme: dark;
+  --paper: 15 16 17; /* coal */
+  --surface: 24 25 27;
+  --sunk: 33 34 36;
+  --stone: 58 59 61; /* smoke */
+  --ink: 236 233 226;
+  --ink-2: 168 165 158;
+  --ink-3: 128 126 121;
+  --line: 236 233 226;
+  --honey: 240 168 74; /* candle */
+  --honey-ink: 242 178 94;
+  --wine: 196 90 104;
+  --brass: 199 154 82;
+  --zinc: 96 99 102;
+  --shadow: 0 0 0;
+  --grain-opacity: 0.09;
+  --grain-blend: screen;
+}
+
+/* A section can keep its own light whatever the site mode is (the evening block is always dark). */
+.tone-day,
+.tone-night {
+  background-color: rgb(var(--paper));
+  color: rgb(var(--ink));
+}
+
+@layer base {
+  html {
+    background: rgb(var(--paper));
+    color: rgb(var(--ink));
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scrollbar-color: rgb(var(--line) / 0.25) transparent;
+  }
+  body {
+    @apply font-sans;
+    font-size: 17px;
+    line-height: 1.55;
+    background: rgb(var(--paper));
+    min-height: 100svh;
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  ::selection {
+    background: rgb(var(--honey) / 0.35);
+    color: rgb(var(--ink));
+  }
+  :focus-visible {
+    outline: 2px solid rgb(var(--honey-ink));
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@layer components {
+  .container-page {
+    width: 100%;
+    max-width: theme("maxWidth.page");
+    margin-inline: auto;
+    padding-inline: clamp(16px, 4vw, 48px);
+  }
+  .eyebrow {
+    @apply font-label uppercase text-ink-2;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+  }
+  .display {
+    @apply font-display;
+    font-variation-settings: "wdth" 62.5;
+  }
+  .display-semi {
+    @apply font-display;
+    font-variation-settings: "wdth" 82;
+  }
+  .rule {
+    border-color: rgb(var(--line) / 0.12);
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full font-sans font-semibold transition-[background-color,color,border-color,transform] duration-300 ease-silk;
+    min-height: 48px;
+    padding: 0 22px;
+    font-size: 15.5px;
+  }
+  .btn-primary {
+    @apply btn bg-ink text-paper hover:bg-honey-ink;
+  }
+  .btn-ghost {
+    @apply btn border border-line/25 text-ink hover:border-ink;
+  }
+  .link-underline {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-size: 0% 1px;
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    transition: background-size 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .link-underline:hover {
+    background-size: 100% 1px;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ---------- Wordmark: light and shadow trade weights when the mode changes ---------- */
+.wordmark {
+  @apply font-display;
+  font-variation-settings: "wdth" 62.5;
+  letter-spacing: -0.005em;
+}
+.wordmark .wm-light,
+.wordmark .wm-shade {
+  transition: font-weight 1.1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+:root[data-mode="day"] .wordmark .wm-light {
+  font-weight: 820;
+}
+:root[data-mode="day"] .wordmark .wm-shade {
+  font-weight: 170;
+}
+:root[data-mode="night"] .wordmark .wm-light {
+  font-weight: 170;
+}
+:root[data-mode="night"] .wordmark .wm-shade {
+  font-weight: 820;
+}
+
+/* Content that exists in both modes: show the one that matches */
+:root[data-mode="day"] .only-night,
+:root[data-mode="night"] .only-day {
+  display: none !important;
+}
+
+/* ---------- Film grain over the whole site ---------- */
+.grain {
+  pointer-events: none;
+  position: fixed;
+  inset: -50%;
+  z-index: 60;
+  opacity: var(--grain-opacity);
+  mix-blend-mode: var(--grain-blend);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 1.4 -0.2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+/* ---------- Mode switch: a circle of light (or shadow) spreads from the toggle ---------- */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-new(root) {
+  z-index: 2;
+}
+
+/* ---------- Lenis ---------- */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: clip;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------- Brand mark: a cup from above that is also a moon ---------- */
+.brand-mark__shade {
+  transition: transform 1.1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+:root[data-mode="day"] .brand-mark__shade {
+  transform: translateX(22px);
+}
+:root[data-mode="night"] .brand-mark__shade {
+  transform: translateX(-5px);
+}
+
+/* ---------- Photo placeholders: the light of the shot, drawn in CSS ---------- */
+.light-study--day {
+  color: rgb(30 29 27 / 0.72);
+  background:
+    repeating-linear-gradient(100deg, transparent 0 16%, rgb(58 74 96 / 0.1) 16% 17.4%),
+    linear-gradient(112deg, transparent 0 16%, rgb(255 212 150 / 0.5) 16% 57%, transparent 57%),
+    radial-gradient(circle at 20% 30%, rgb(160 136 108 / 0.4) 0 1.4px, transparent 2px) 0 0 / 23px 19px,
+    radial-gradient(circle at 70% 60%, rgb(110 110 106 / 0.32) 0 1px, transparent 1.6px) 0 0 / 17px 29px,
+    radial-gradient(circle at 40% 80%, rgb(196 118 76 / 0.24) 0 1.2px, transparent 1.8px) 0 0 / 31px 23px,
+    #dad8d2;
+}
+.light-study--night {
+  color: rgb(236 233 226 / 0.62);
+  background:
+    radial-gradient(58% 52% at 26% 28%, rgb(240 168 74 / 0.34), transparent 70%),
+    radial-gradient(14% 12% at 26% 28%, rgb(255 206 130 / 0.5), transparent 75%),
+    radial-gradient(circle at 20% 30%, rgb(255 255 255 / 0.05) 0 1.2px, transparent 1.8px) 0 0 / 23px 19px,
+    linear-gradient(160deg, #1d1c1b, #0d0e0f 72%);
+}
+
+/* ---------- Hero: the table, the cup and the live liquid ----------
+   Each photo is sized so that it covers the stage while its liquid circle (cx, cy) sits exactly at the
+   stage anchor (sx, sy). The live canvas is centered on that anchor with the photo's liquid radius.
+   Calibration comes from src/data/hero.ts as --{d|m}{cx|cy|r|ar}-{day|night} on the stage. */
+.hero-stage {
+  container-type: size;
+  --sx: 0.5;
+  --sy: 0.5;
+  --zoom: 1.5;
+  --cx-day: var(--mcx-day);
+  --cy-day: var(--mcy-day);
+  --r-day: var(--mr-day);
+  --ar-day: var(--mar-day);
+  --cx-night: var(--mcx-night);
+  --cy-night: var(--mcy-night);
+  --r-night: var(--mr-night);
+  --ar-night: var(--mar-night);
+}
+@media (min-width: 1100px) {
+  .hero-stage {
+    --sx: 0.64;
+    --zoom: 1;
+    --cx-day: var(--dcx-day);
+    --cy-day: var(--dcy-day);
+    --r-day: var(--dr-day);
+    --ar-day: var(--dar-day);
+    --cx-night: var(--dcx-night);
+    --cy-night: var(--dcy-night);
+    --r-night: var(--dr-night);
+    --ar-night: var(--dar-night);
+  }
+}
+.hero-stage {
+  --h-day: calc(
+    var(--zoom) *
+      max(
+        var(--sx) * 100cqw / (var(--cx-day) * var(--ar-day)),
+        (1 - var(--sx)) * 100cqw / ((1 - var(--cx-day)) * var(--ar-day)),
+        var(--sy) * 100cqh / var(--cy-day),
+        (1 - var(--sy)) * 100cqh / (1 - var(--cy-day))
+      )
+  );
+  --h-night: calc(
+    var(--zoom) *
+      max(
+        var(--sx) * 100cqw / (var(--cx-night) * var(--ar-night)),
+        (1 - var(--sx)) * 100cqw / ((1 - var(--cx-night)) * var(--ar-night)),
+        var(--sy) * 100cqh / var(--cy-night),
+        (1 - var(--sy)) * 100cqh / (1 - var(--cy-night))
+      )
+  );
+}
+.hero-layer {
+  transition: opacity 1.2s cubic-bezier(0.65, 0, 0.35, 1);
+}
+:root[data-mode="day"] .hero-layer--night,
+:root[data-mode="night"] .hero-layer--day {
+  opacity: 0;
+}
+.hero-photo {
+  position: absolute;
+  overflow: hidden;
+}
+.hero-photo--day {
+  height: var(--h-day);
+  width: calc(var(--h-day) * var(--ar-day));
+  left: calc(var(--sx) * 100% - var(--cx-day) * var(--h-day) * var(--ar-day));
+  top: calc(var(--sy) * 100% - var(--cy-day) * var(--h-day));
+  background: #cdbba3;
+}
+.hero-photo--night {
+  height: var(--h-night);
+  width: calc(var(--h-night) * var(--ar-night));
+  left: calc(var(--sx) * 100% - var(--cx-night) * var(--h-night) * var(--ar-night));
+  top: calc(var(--sy) * 100% - var(--cy-night) * var(--h-night));
+  background: #2a2018;
+}
+.hero-table {
+  background: #d9d7d1 url("/textures/terrazzo.webp") center / calc(var(--h-day) * 1.15);
+}
+.hero-table--night {
+  background:
+    radial-gradient(circle at calc(var(--sx) * 100% + var(--h-night) * 0.3) calc(var(--sy) * 100% - var(--h-night) * 0.3), rgb(240 168 74 / 0.34), transparent calc(var(--h-night) * 0.55)),
+    radial-gradient(circle at 70% 80%, rgb(0 0 0 / 0.5), transparent 60%),
+    linear-gradient(rgb(12 12 13 / 0.86), rgb(12 12 13 / 0.9)),
+    #151515 url("/textures/terrazzo.webp") center / calc(var(--h-night) * 1.15);
+}
+.hero-window {
+  pointer-events: none;
+  -webkit-mask-image: radial-gradient(circle at calc(var(--sx) * 100%) calc(var(--sy) * 100%), transparent 0 calc(var(--h-day) * 0.26), #000 calc(var(--h-day) * 0.4));
+  mask-image: radial-gradient(circle at calc(var(--sx) * 100%) calc(var(--sy) * 100%), transparent 0 calc(var(--h-day) * 0.26), #000 calc(var(--h-day) * 0.4));
+}
+.hero-window::before,
+.hero-window::after {
+  content: "";
+  position: absolute;
+  inset: -10%;
+}
+.hero-window::before {
+  background: linear-gradient(104deg, transparent 0 4%, rgb(255 214 150 / 0.55) 4% 58%, transparent 66%);
+  mix-blend-mode: soft-light;
+}
+.hero-window::after {
+  background:
+    repeating-linear-gradient(104deg, transparent 0 12%, rgb(46 60 80 / 0.2) 12% 13.6%),
+    repeating-linear-gradient(14deg, transparent 0 24%, rgb(46 60 80 / 0.16) 24% 25.6%);
+  -webkit-mask-image: linear-gradient(104deg, transparent 0 4%, #000 8% 56%, transparent 64%);
+  mask-image: linear-gradient(104deg, transparent 0 4%, #000 8% 56%, transparent 64%);
+  mix-blend-mode: multiply;
+  filter: blur(5px);
+}
+.hero-art,
+.hero-liquid {
+  position: absolute;
+  left: calc(var(--sx) * 100%);
+  top: calc(var(--sy) * 100%);
+  transform: translate(-50%, -50%);
+  aspect-ratio: 1;
+}
+.hero-art--day {
+  width: calc(var(--h-day) * var(--r-day) * 2 * 2.3);
+}
+.hero-art--night {
+  width: calc(var(--h-night) * var(--r-night) * 2 * 2.3);
+}
+.hero-liquid {
+  width: calc(var(--h-day) * var(--r-day) * 2);
+  border-radius: 50%;
+  transition: width 1.2s cubic-bezier(0.65, 0, 0.35, 1);
+}
+:root[data-mode="night"] .hero-liquid {
+  width: calc(var(--h-night) * var(--r-night) * 2);
+}
+.latte-canvas {
+  touch-action: none;
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 36 36'%3E%3Cg transform='rotate(-40 18 18)'%3E%3Cellipse cx='18' cy='8.5' rx='5' ry='7' fill='%23c89b4f' stroke='%231e1d1b' stroke-width='1.2'/%3E%3Crect x='16.6' y='14' width='2.8' height='19' rx='1.4' fill='%23c89b4f' stroke='%231e1d1b' stroke-width='1.2'/%3E%3C/g%3E%3C/svg%3E") 8 8, grab;
+}
+.hero-candle {
+  left: calc(var(--sx) * 100% + var(--h-night) * 0.27);
+  top: calc(var(--sy) * 100% - var(--h-night) * 0.34);
+  width: calc(var(--h-night) * 0.075);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(255 196 110 / 0.95) 0 18%, rgb(214 128 40 / 0.9) 30%, rgb(120 60 15 / 0.85) 62%, rgb(60 30 10 / 0.9) 100%);
+  box-shadow: 0 0 calc(var(--h-night) * 0.12) calc(var(--h-night) * 0.03) rgb(240 168 74 / 0.45);
+}
+.hero-candle__flame {
+  position: absolute;
+  inset: 34%;
+  border-radius: 50%;
+  background: #fff4dc;
+  box-shadow: 0 0 14px 6px rgb(255 214 150 / 0.9);
+  animation: flicker 2.6s ease-in-out infinite;
+}
+@keyframes flicker {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  30% { opacity: 0.86; transform: scale(0.92); }
+  55% { opacity: 1; transform: scale(1.06); }
+  75% { opacity: 0.9; transform: scale(0.96); }
+}
+.hero-scrim {
+  background: linear-gradient(to bottom, transparent 62%, rgb(var(--paper)) 100%);
+}
+@media (min-width: 1100px) {
+  .hero-scrim {
+    background:
+      linear-gradient(90deg, rgb(var(--paper) / 0.82) 0%, rgb(var(--paper) / 0.5) 24%, transparent 40%, transparent 64%, rgb(var(--paper) / 0.4) 84%, rgb(var(--paper) / 0.65) 100%),
+      linear-gradient(to bottom, rgb(var(--paper) / 0.5) 0%, transparent 16%);
+  }
+}
+.hero-scroll-line {
+  position: relative;
+  overflow: hidden;
+}
+.hero-scroll-line::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: -40%;
+  width: 1px;
+  height: 40%;
+  background: rgb(var(--ink));
+  animation: scrollcue 2.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+@keyframes scrollcue {
+  to { top: 100%; }
+}
+
+/* Mode toggle icon: full sun by day, a crescent by night */
+.brand-toggle-shade {
+  transition: transform 1.1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+:root[data-mode="day"] .brand-toggle-shade {
+  transform: translateX(110%);
+}
+:root[data-mode="night"] .brand-toggle-shade {
+  transform: translateX(34%);
+}
+
+/* Steam over hot drinks in the cross-section */
+.anatomy-steam path {
+  stroke-dasharray: 26 60;
+  animation: steam 3.2s ease-in-out infinite;
+}
+.anatomy-steam path:nth-child(2) {
+  animation-delay: -1.1s;
+}
+.anatomy-steam path:nth-child(3) {
+  animation-delay: -2.2s;
+}
+@keyframes steam {
+  0% { stroke-dashoffset: 40; opacity: 0; }
+  30% { opacity: 1; }
+  100% { stroke-dashoffset: -46; opacity: 0; }
+}
+
+/* ---------- Floor plan ---------- */
+.plan-top {
+  fill: rgb(var(--surface));
+  stroke: rgb(var(--ink) / 0.55);
+  stroke-width: 1.5;
+  transition: fill 0.3s ease, stroke 0.3s ease, stroke-width 0.3s ease;
+}
+.plan-top--bar {
+  fill: transparent;
+  stroke: transparent;
+}
+.plan-chair {
+  fill: rgb(var(--stone));
+  stroke: rgb(var(--ink) / 0.35);
+  stroke-width: 1;
+}
+.plan-table__num {
+  fill: rgb(var(--ink-2));
+}
+.plan-table {
+  outline: none;
+  transition: opacity 0.4s ease;
+}
+.plan-table--zone .plan-top {
+  stroke: rgb(var(--honey-ink));
+  stroke-width: 2.5;
+}
+.plan-table--free .plan-top {
+  fill: rgb(var(--honey) / 0.22);
+  stroke: rgb(var(--honey-ink));
+  stroke-width: 2;
+}
+.plan-table--free .plan-top--bar {
+  fill: rgb(var(--honey) / 0.16);
+}
+.plan-table--free .plan-table__num {
+  fill: rgb(var(--ink));
+}
+.plan-table--free:hover .plan-top,
+.plan-table--free:focus-visible .plan-top {
+  fill: rgb(var(--honey) / 0.5);
+  stroke-width: 3;
+}
+.plan-table--taken .plan-top {
+  fill: url(#plan-taken);
+  stroke: rgb(var(--ink) / 0.3);
+}
+.plan-table--taken .plan-top--bar {
+  fill: url(#plan-taken);
+}
+.plan-table--taken .plan-table__num {
+  fill: rgb(var(--ink-3));
+}
+.plan-table--unfit {
+  opacity: 0.3;
+}
+.plan-table--selected .plan-top {
+  fill: rgb(var(--honey));
+  stroke: rgb(var(--ink));
+  stroke-width: 2.5;
+}
+.plan-candle circle:first-child {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: candleGlow 2.6s ease-in-out infinite;
+}
+@keyframes candleGlow {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  45% { opacity: 1; transform: scale(1.08); }
+  70% { opacity: 0.9; transform: scale(0.97); }
+}
+
+.map-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: mapPulse 2.8s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+@keyframes mapPulse {
+  0% { transform: scale(0.4); opacity: 0.9; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* ---------- Booking ticket ---------- */
+.ticket-wrap {
+  --notch: rgb(var(--paper));
+}
+.ticket {
+  background-color: #fbfbf9;
+}
+.ticket-perforation {
+  position: relative;
+  margin-inline: 28px;
+  border-top: 2px dashed rgb(30 29 27 / 0.16);
+}
+.ticket-perforation::before,
+.ticket-perforation::after {
+  content: "";
+  position: absolute;
+  top: -15px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--notch);
+}
+.ticket-perforation::before {
+  left: -43px;
+}
+.ticket-perforation::after {
+  right: -43px;
+}
